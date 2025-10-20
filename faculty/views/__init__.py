@@ -1,0 +1,5 @@
+from .committee_v import CommitteeListView, CommitteeDetailView, CommitteeCreateView, CommitteeUpdateView, committee_delete
+from .committee_with_exams_v import CommitteeWithExamsListView
+from .committee_detail_courses_v import CommitteeDetailWithCoursesView
+from .committee_detail_with_questions_v import CommitteeDetailWithQuestionsView
+from .committee_eventlist_light_v import committee_detail_eventlist_view, course_event_create, course_event_edit, course_event_delete

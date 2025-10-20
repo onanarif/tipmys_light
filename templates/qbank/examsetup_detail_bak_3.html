@@ -1,0 +1,209 @@
+{# templates/qbank/examsetup_detail.html #}
+{% extends "inc/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ exam.name }} — {% trans "Exam Detail" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+
+  <!-- Exam header -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">{{ exam.name }}</h3>
+    <div class="text-muted">{{ exam.get_type_display|default:exam.type }}</div>
+  </div>
+
+  <!-- Exam summary -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="fw-semibold">{% trans "Program (Dönem)" %}</div>
+          <div>{{ exam.program.name|default:"—" }}</div>
+        </div>
+        <div class="col-md-3">
+          <div class="fw-semibold">{% trans "Kurul/Staj" %}</div>
+          <div>
+            {% if exam.committee %}
+              <a class="text-decoration-none" href="{{ exam.committee.get_absolute_url }}">
+                {{ exam.committee.name }}
+              </a>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="fw-semibold">{% trans "Tarih" %}</div>
+          <div>{{ exam.date|date:"d.m.Y" }}</div>
+        </div>
+        <div class="col-md-3">
+          <div class="fw-semibold">{% trans "Başlangıç / Bitiş" %}</div>
+          <div>{{ exam.start|date:"d.m.Y H:i" }} — {{ exam.finish|date:"d.m.Y H:i" }}</div>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-2">
+        <div class="col-md-3">
+          <div class="fw-semibold">{% trans "Soru sayısı" %}</div>
+          <div>{{ exam.qtotal|default:"—" }}</div>
+        </div>
+        <div class="col-md-3">
+          <div class="fw-semibold">{% trans "Penalty" %}</div>
+          <div>
+            {% if exam.apply_penalty %}
+              <span class="badge bg-warning text-dark">{% trans "Enabled" %}</span>
+            {% else %}
+              <span class="badge bg-secondary">{% trans "Disabled" %}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="fw-semibold">{% trans "Locked" %}</div>
+          <div>
+            {% if exam.locked %}
+              <span class="badge bg-danger">{% trans "Locked" %}</span>
+            {% else %}
+              <span class="badge bg-success">{% trans "Open" %}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Overall selection summary across visible courses (server totals) #}
+  <div class="alert {% if total_match %}alert-success{% else %}alert-warning{% endif %} mb-3">
+    <strong>{% trans "Toplam seçilen" %}:</strong> {{ selected_total }} /
+    <strong>{% trans "Toplam gereken" %}:</strong> {{ required_total }}.
+    {% if total_match %}
+      {% trans "Seçim toplamı hedefle uyumlu." %}
+    {% else %}
+      {% trans "Lütfen seçimlerinizi hedefe uyarlayın." %}
+    {% endif %}
+    {% if showing_all_courses %}
+      <span class="ms-2 badge bg-info">{% trans "Tüm dersler görüntüleniyor (başkan/süperuser)." %}</span>
+    {% endif %}
+  </div>
+
+  <!-- Courses table -->
+  <div class="card">
+    <div class="table-responsive">
+      <table id="coursesTable" class="table table-sm table-striped table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:30%">{% trans "Ders" %}</th>
+            <th style="width:18%">{% trans "Akademisyen" %}</th>
+            <th style="width:18%">{% trans "Anabilim Dalı" %}</th>
+            <th style="width:10%">{% trans "Tür" %}</th>
+            <th class="text-center" style="width:12%">{% trans "Seçilen / Gereken" %}</th>
+            <th class="text-center" style="width:12%">{% trans "Durum" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course in courses %}
+            <tr>
+              <td data-order="{{ course.name|default:'' }}">
+                <a class="fw-semibold text-decoration-none"
+                  href="{% url 'qbank:course_master_question_select' course.id exam.id %}">
+                  {{ course.name }}
+                </a>
+                <div class="small text-muted">
+                  {% trans "Toplam soru" %}: {{ course.total_questions|default:"0" }}
+                </div>
+              </td>
+
+              <td data-order="{% if course.lecturer and course.lecturer.user %}{{ course.lecturer.user.get_full_name }}{% endif %}">
+                {% if course.lecturer and course.lecturer.user %}
+                  {{ course.lecturer.user.first_name }} {{ course.lecturer.user.last_name }}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <td data-order="{{ course.department.name|default:'' }}">{{ course.department.name|default:"—" }}</td>
+              <td data-order="{{ course.type.name|default:'' }}">{{ course.type.name|default:"—" }}</td>
+
+              {# Selected/Required: keep the "x,y" data-order for numeric sorting #}
+              <td class="text-center"
+                  data-order="{{ course.selected_count|default:0 }},{{ course.required|default:0 }}">
+                <span class="badge bg-primary">{{ course.selected_count }}</span>
+                /
+                <span class="text-muted">{{ course.required }}</span>
+              </td>
+
+              {# Status: inline numeric rank so DataTables can sort it #}
+              <td class="text-center"
+                  data-order="{% if course.status == 'ok' %}3{% elif course.status == 'less' %}2{% elif course.status == 'more' %}1{% else %}0{% endif %}">
+                {% if course.status == "ok" %}
+                  <span class="badge bg-success">{% trans "Tamam" %}</span>
+                {% elif course.status == "less" %}
+                  <span class="badge bg-warning text-dark">{% trans "Eksik" %}: {{ course.remaining }}</span>
+                {% elif course.status == "more" %}
+                  <span class="badge bg-danger">{% trans "Fazla" %}: {{ course.over }}</span>
+                {% else %}
+                  <span class="badge bg-secondary">{% trans "Bilinmiyor" %}</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-4">
+                {% trans "No courses found for this committee." %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block endscript %}
+{# DataTables assets (Bootstrap 5 integration + Turkish i18n) #}
+<link rel="stylesheet"
+  href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+  (function () {
+    // Custom sort for "x,y" numeric pair used in Selected/Required column
+    // This ensures rows sort by selected first, then required.
+    jQuery.extend(jQuery.fn.dataTable.ext.type.order, {
+      "selreq-pre": function (d) {
+        // 'd' is taken from data-order attr like "3,5"
+        if (typeof d !== 'string') return 0;
+        var parts = d.split(',');
+        var sel = parseInt(parts[0] || '0', 10);
+        var req = parseInt(parts[1] || '0', 10);
+        // Map to a sortable number; weight selected more heavily.
+        return sel * 100000 + req; // enough headroom for typical ranges
+      }
+    });
+
+    const dt = $('#coursesTable').DataTable({
+      pageLength: 50,
+      lengthMenu: [5, 10, 20, 50],
+      order: [[0, 'asc']], // default: by course name
+      columnDefs: [
+        // Use our custom type on the "Selected/Required" column (index 4)
+        { targets: 4, type: 'selreq' },
+        // Center alignment for last two columns
+        { targets: [4, 5], className: 'text-center' }
+      ],
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.13.7/i18n/tr.json"
+      }
+    });
+
+    // Optional: if you want the search box in the header area instead of default,
+    // you can move/clone dt.search() input via DOM tweaks here.
+  })();
+</script>
+{% endblock %}
+

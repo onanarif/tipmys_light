@@ -1,0 +1,171 @@
+{% extends "inc/base.html" %}
+{% load static %}
+
+{% block title %}Soru Listesi{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Soru Listesi</h2>
+    <div class="d-flex gap-2">
+      <a class="btn btn-success" href="{% url 'qbank:question_create' %}">+ Yeni Soru</a>
+    </div>
+  </div>
+
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} mb-2">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form class="row g-2 mb-3" method="get">
+    <div class="col-md-4">
+      <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Ara (ad, metin, etiket)"
+             class="form-control">
+    </div>
+    <div class="col-md-3">
+    <select class="form-select select2" name="master" data-placeholder="Ders">
+        <option value=""></option>
+        {% for m in masters %}
+        <option value="{{ m.id }}"
+            {% if selected_master == m.id|stringformat:"s" %}selected{% endif %}>
+            {{ m.name }}
+        </option>
+        {% endfor %}
+    </select>
+    </div>
+    <div class="col-md-2">
+      <select class="form-select" name="type">
+        <option value="">Tür (hepsi)</option>
+        <option value="theoric" {% if request.GET.type == 'theoric' %}selected{% endif %}>Theoric</option>
+        <option value="pratic" {% if request.GET.type == 'pratic' %}selected{% endif %}>Pratic</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select class="form-select" name="active">
+        <option value="">Durum</option>
+        <option value="1" {% if request.GET.active == '1' %}selected{% endif %}>Aktif</option>
+        <option value="0" {% if request.GET.active == '0' %}selected{% endif %}>Pasif</option>
+      </select>
+    </div>
+    <div class="col-md-1 d-grid">
+      <button class="btn btn-outline-primary">Filtre</button>
+    </div>
+  </form>
+
+  <table class="table table-bordered table-hover align-middle">
+    <thead class="thead-dark">
+      <tr>
+        <th>Ad</th>
+        <th>Ders</th>
+        <th>Öğr. Üyesi</th>
+        <th>Tür</th>
+        <th>Aktif</th>
+        <th>Güncellendi</th>
+        <th class="text-end">İşlemler</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for q in questions %}
+      <tr>
+        <td><a href="{% url 'qbank:question_detail' q.pk %}">{{ q.name }}</a></td>
+        <td>{{ q.master.name }}</td>
+        <td>{{ q.lecturer.user.get_full_name }}</td>
+        <td>{{ q.type }}</td>
+        <td>
+          {% if q.active %}<span class="badge bg-success">Aktif</span>
+          {% else %}<span class="badge bg-secondary">Pasif</span>{% endif %}
+        </td>
+        <td>{{ q.updated_at|date:"d.m.Y H:i" }}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'qbank:question_update' q.pk %}">Düzenle</a>
+
+          <button type="button" class="btn btn-sm btn-outline-danger"
+                  data-bs-toggle="modal" data-bs-target="#deleteConfirmModal"
+                  data-delete-url="{% url 'qbank:question_delete' q.pk %}"
+                  data-item-name="{{ q.name|escape }}">
+            Sil
+          </button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-muted">Kayıt yok.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if is_paginated %}
+  <nav>
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">Önceki</a></li>
+      {% endif %}
+      <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+      {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">Sonraki</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+
+<!-- One reusable delete modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="deleteConfirmForm" method="post" action="#">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Silme Onayı</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong id="deleteItemName">Bu kayıt</strong> silinsin mi?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
+          <button type="submit" class="btn btn-danger">Evet, sil</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Select2 CSS/JS + init (for the filter dropdown too) -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js"></script>
+
+<script>
+(function(){
+  // delete modal action wiring
+  var modal = document.getElementById('deleteConfirmModal');
+  if (modal) {
+    modal.addEventListener('show.bs.modal', function (e) {
+      var btn = e.relatedTarget;
+      var url = btn && btn.getAttribute('data-delete-url');
+      var name = btn && btn.getAttribute('data-item-name');
+
+      var form = document.getElementById('deleteConfirmForm');
+      var label = document.getElementById('deleteItemName');
+
+      if (url) form.setAttribute('action', url);
+      if (name) label.textContent = '"' + name + '"';
+    });
+  }
+
+  // select2 for filters
+  function widthResolver(){ return '100%'; }
+  $('.select2').select2({
+    theme: 'bootstrap-5',
+    width: widthResolver(),
+    allowClear: true,
+    placeholder: function(){ return $(this).data('placeholder') || 'Seçiniz'; }
+  });
+})();
+</script>
+{% endblock %}

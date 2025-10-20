@@ -1,0 +1,293 @@
+{# templates/qbank/course_master_detail.html #}
+{% extends "inc/base.html" %}
+{% load static %}
+{% block title %}{{ course.name }} – Ders Detayı{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h2 class="mb-1">{{ course.name }}</h2>
+      <div class="d-flex gap-2">
+        {% if course.active %}
+          <span class="badge bg-success">Aktif</span>
+        {% else %}
+          <span class="badge bg-secondary">Pasif</span>
+        {% endif %}
+        {% if course.multilecture %}
+          <span class="badge bg-info">Çoklu</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      {% if course.committee_id %}
+        <a class="btn btn-outline-primary"
+           href="{% url 'faculty:committee_detail' course.committee_id %}">
+          Kurul/Staja Git
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Özet -->
+  <div class="row g-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">Özet</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-3">Kurul/Staj</dt>
+            <dd class="col-sm-9">
+              {% if course.committee %}
+                <a href="{% url 'faculty:committee_detail' course.committee.pk %}">
+                  {{ course.committee.name }}
+                </a>
+              {% else %}—{% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Öğretim Üyesi</dt>
+            <dd class="col-sm-9">
+              {% if course.lecturer and course.lecturer.user %}
+                {{ course.lecturer.user.get_full_name }}
+              {% else %}—{% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Bölüm</dt>
+            <dd class="col-sm-9">{{ course.department.name|default:"—" }}</dd>
+
+            <dt class="col-sm-3">Tür</dt>
+            <dd class="col-sm-9">{{ course.type.name|default:"—" }}</dd>
+
+            <dt class="col-sm-3">Oluşturulma</dt>
+            <dd class="col-sm-9">
+              {% if course.created_at %}{{ course.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Güncellenme</dt>
+            <dd class="col-sm-9">
+              {% if course.updated_at %}{{ course.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+            </dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sorular -->
+  <div class="row g-3 mt-0">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-semibold">Sorular</span>
+            <span class="badge bg-secondary">{{ course.questions|length }} adet</span>
+          </div>
+
+          <div class="d-flex flex-wrap gap-2">
+            <input type="text" id="questionFilter" class="form-control form-control-sm"
+                   placeholder="Soru/öğretim üyesi ara…" style="min-width: 220px;">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="expandAll">Tümünü Aç</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="collapseAll">Tümünü Kapat</button>
+
+            {# YETKİ: Süperuser / dersin hocası / komite başkanı görebilir #}
+            {% if request.user.is_superuser %}
+              <a class="btn btn-sm btn-success"
+                 href="{% url 'qbank:question_create' %}?master={{ course.id }}&next={{ request.get_full_path|urlencode }}">
+                + Yeni Soru
+              </a>
+            {% elif course.lecturer and course.lecturer.user_id == request.user.id %}
+              <a class="btn btn-sm btn-success"
+                 href="{% url 'qbank:question_create' %}?master={{ course.id }}&next={{ request.get_full_path|urlencode }}">
+                + Yeni Soru
+              </a>
+            {% elif course.committee and course.committee.chair_id == request.user.facultyprofile.id %}
+              <a class="btn btn-sm btn-success"
+                 href="{% url 'qbank:question_create' %}?master={{ course.id }}&next={{ request.get_full_path|urlencode }}">
+                + Yeni Soru
+              </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0 align-middle" id="questionsTable">
+            <thead>
+              <tr>
+                <th style="width:28%">Ad</th>
+                <th style="width:20%">Öğretim Üyesi</th>
+                <th style="width:10%">Tür</th>
+                <th style="width:12%">Durum</th>
+                <th style="width:15%">Oluşturulma</th>
+                <th class="text-end" style="width:15%">Cevaplar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% with placeholder="Please fill this field" %}
+              {% for q in course.questions.all %}
+                <tr class="q-row"
+                    data-q-name="{{ q.name|default:''|lower }}"
+                    data-q-lecturer="{% if q.lecturer and q.lecturer.user %}{{ q.lecturer.user.get_full_name|lower }}{% else %}{% endif %}">
+                  <td class="fw-semibold">{{ q.name }}</td>
+                  <td>
+                    {% if q.lecturer and q.lecturer.user %}
+                      {{ q.lecturer.user.get_full_name }}
+                    {% else %}—{% endif %}
+                  </td>
+                  <td>{{ q.get_type_display|default:q.type }}</td>
+                  <td>
+                    {% if q.active and not q.hidden %}
+                      <span class="badge bg-success">Aktif</span>
+                    {% elif q.hidden %}
+                      <span class="badge bg-warning text-dark">Gizli</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Pasif</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ q.created_at|date:"d.m.Y H:i" }}</td>
+                  <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#q{{ q.id }}"
+                            aria-expanded="false"
+                            aria-controls="q{{ q.id }}">
+                      Göster / Gizle
+                    </button>
+                  </td>
+                </tr>
+
+                <tr data-answer-row>
+                  <td colspan="6">
+                    <div class="collapse" id="q{{ q.id }}">
+                      <div class="p-2">
+
+                        {% if q.question_text %}
+                          <div class="mb-2">
+                            <div class="text-muted small">Soru Metni</div>
+                            <div>{{ q.question_text|linebreaksbr }}</div>
+                          </div>
+                        {% endif %}
+
+                        <div class="text-muted small mb-1">Cevaplar</div>
+                        <ul class="list-group">
+                          {% if q.answer_1_text and q.answer_1_text != placeholder %}
+                            <li class="list-group-item d-flex justify-content-between">
+                              <div><span class="fw-bold">A)</span> {{ q.answer_1_text|linebreaksbr }}</div>
+                              {% if q.answer_1_fraction > 0 %}
+                                <span class="badge bg-success">Doğru</span>
+                              {% endif %}
+                            </li>
+                          {% endif %}
+
+                          {% if q.answer_2_text and q.answer_2_text != placeholder %}
+                            <li class="list-group-item d-flex justify-content-between">
+                              <div><span class="fw-bold">B)</span> {{ q.answer_2_text|linebreaksbr }}</div>
+                              {% if q.answer_2_fraction > 0 %}
+                                <span class="badge bg-success">Doğru</span>
+                              {% endif %}
+                            </li>
+                          {% endif %}
+
+                          {% if q.answer_3_text and q.answer_3_text != placeholder %}
+                            <li class="list-group-item d-flex justify-content-between">
+                              <div><span class="fw-bold">C)</span> {{ q.answer_3_text|linebreaksbr }}</div>
+                              {% if q.answer_3_fraction > 0 %}
+                                <span class="badge bg-success">Doğru</span>
+                              {% endif %}
+                            </li>
+                          {% endif %}
+
+                          {% if q.answer_4_text and q.answer_4_text != placeholder %}
+                            <li class="list-group-item d-flex justify-content-between">
+                              <div><span class="fw-bold">D)</span> {{ q.answer_4_text|linebreaksbr }}</div>
+                              {% if q.answer_4_fraction > 0 %}
+                                <span class="badge bg-success">Doğru</span>
+                              {% endif %}
+                            </li>
+                          {% endif %}
+
+                          {% if q.answer_5_text and q.answer_5_text != placeholder %}
+                            <li class="list-group-item d-flex justify-content-between">
+                              <div><span class="fw-bold">E)</span> {{ q.answer_5_text|linebreaksbr }}</div>
+                              {% if q.answer_5_fraction > 0 %}
+                                <span class="badge bg-success">Doğru</span>
+                              {% endif %}
+                            </li>
+                          {% endif %}
+                        </ul>
+
+                        {% if q.general_feedback %}
+                          <div class="mt-2">
+                            <div class="text-muted small">Genel Geri Bildirim</div>
+                            <div>{{ q.general_feedback|linebreaksbr }}</div>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6" class="text-muted">Bu derse ait soru bulunmuyor.</td></tr>
+              {% endfor %}
+              {% endwith %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block endscript %}
+<script>
+  (function () {
+    // Basit filtreleme
+    const filterInput = document.getElementById('questionFilter');
+    const rows = Array.from(document.querySelectorAll('#questionsTable tbody tr.q-row'));
+
+    function normalize(s){ return (s || '').toString().trim().toLowerCase(); }
+
+    filterInput?.addEventListener('input', function(){
+      const q = normalize(this.value);
+      rows.forEach(r => {
+        const name = r.getAttribute('data-q-name') || '';
+        const lec  = r.getAttribute('data-q-lecturer') || '';
+        const match = !q || name.includes(q) || lec.includes(q);
+        r.style.display = match ? '' : 'none';
+
+        const answersRow = r.nextElementSibling;
+        if (answersRow && answersRow.hasAttribute('data-answer-row')) {
+          answersRow.style.display = match ? '' : 'none';
+        }
+      });
+    });
+
+    // Collapse toplu kontrol
+    function allCollapseDivs() {
+      return Array.from(document.querySelectorAll('tr[data-answer-row] > td > div.collapse[id^="q"]'));
+    }
+
+    const expandAllBtn = document.getElementById('expandAll');
+    const collapseAllBtn = document.getElementById('collapseAll');
+
+    expandAllBtn?.addEventListener('click', () => {
+      allCollapseDivs().forEach(el => {
+        const inst = bootstrap.Collapse.getOrCreateInstance(el, { toggle: false });
+        inst.show();
+      });
+    });
+
+    collapseAllBtn?.addEventListener('click', () => {
+      allCollapseDivs().forEach(el => {
+        const inst = bootstrap.Collapse.getOrCreateInstance(el, { toggle: false });
+        inst.hide();
+      });
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends "inc/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ course.name }} — {% trans "Select Questions for Exam" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h2 class="mb-1">{{ course.name }}</h2>
+      <div class="d-flex gap-2">
+
+        {% if course.active %}<span class="badge bg-success">{% trans "Active" %}</span>{% else %}
+          <span class="badge bg-secondary">{% trans "Inactive" %}</span>{% endif %}
+        {% if course.multilecture %}<span class="badge bg-info">{% trans "Multi-lecture" %}</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'qbank:examsetup_detail' exam.id %}"
+        class="btn btn-outline-secondary">
+        ← {% trans "Sınava geri dön" %}
+      </a>
+      <a class="btn btn-outline-secondary" href="{% url 'qbank:course_master_detail' course.id %}">
+        {% trans "Ders detayı" %}
+      </a>
+      {% if exam %}
+        <a class="btn btn-outline-primary" href="{% url 'qbank:examsetup_detail_questions' exam.id %}">
+          {{ exam.name }} {% trans "seçilen sorular" %}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="fw-semibold">{% trans "Kurul/Staj" %}</div>
+          <div>
+            {% if course.committee %}
+              <a class="text-decoration-none" href="{{ course.committee.get_absolute_url }}">
+                {{ course.committee.name }}
+              </a>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="fw-semibold">{% trans "Akademisyen" %}</div>
+          <div>
+            {% if course.lecturer and course.lecturer.user %}
+              {{ course.lecturer.user.get_full_name }}
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="fw-semibold">{% trans "Sınav" %}</div>
+          <div>
+            {% if exam %}
+              <a class="text-decoration-none" href="{% url 'qbank:examsetup_detail' exam.id %}">
+                {{ exam.name }} ({{ exam.get_type_display|default:exam.type }})
+              </a>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selection form -->
+  <form method="post" class="card">
+    {% csrf_token %}
+
+    <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <span class="fw-semibold">{% trans "Sorular" %}</span>
+        <span class="badge bg-secondary">{{ questions|length }}</span>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <input type="text" id="questionFilter" class="form-control form-control-sm"
+               placeholder="{% trans 'Akademisyen ara…' %}" style="min-width: 220px;">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="selectAll">{% trans "Tümünü işaretle (filteli)" %}</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="clearAll">{% trans "İşaretleri kaldır (filteli)" %}</button>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle" id="questionsTable">
+        <thead>
+          <tr>
+            <th style="width:5%"></th>
+            <th style="width:28%">{% trans "Soru kodu" %}</th>
+            <th style="width:20%">{% trans "Akademisyen" %}</th>
+            <th style="width:10%">{% trans "Tür" %}</th>
+            <th style="width:12%">{% trans "Durum" %}</th>
+            <th style="width:25%">{% trans "Soru kökü" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for q in questions %}
+            <tr class="q-row"
+                data-q-name="{{ q.name|default:''|lower }}"
+                data-q-lecturer="{% if q.lecturer and q.lecturer.user %}{{ q.lecturer.user.get_full_name|lower }}{% endif %}">
+              <td>
+                <input
+                  type="checkbox"
+                  class="form-check-input q-check"
+                  name="qids"
+                  value="{{ q.id }}"
+                  {% if q.id in selected_ids %}checked{% endif %}
+                >
+              </td>
+              <td class="fw-semibold">{{ q.name }}</td>
+              <td>
+                {% if q.lecturer and q.lecturer.user %}
+                  {{ q.lecturer.user.get_full_name }}
+                {% else %}<span class="text-muted">—</span>{% endif %}
+              </td>
+              <td>{{ q.get_type_display|default:q.type }}</td>
+              <td>
+                {% if q.active and not q.hidden %}
+                  <span class="badge bg-success">{% trans "Active" %}</span>
+                {% elif q.hidden %}
+                  <span class="badge bg-warning text-dark">{% trans "Hidden" %}</span>
+                {% else %}
+                  <span class="badge bg-secondary">{% trans "Inactive" %}</span>
+                {% endif %}
+              </td>
+              <td class="text-muted small">
+                {{ q.question_text|default:""|truncatechars:120 }}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-muted text-center py-4">{% trans "No questions for this course." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-footer d-flex justify-content-between">
+      <div class="text-muted small">
+        {% trans "İşaretlenen öğeler, sınavın seçilen soru listesine kaydedilecektir." %}
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          {% trans "Seçimi kaydet" %}
+        </button>
+      </div>
+    </div>
+  </form>
+
+</div>
+{% endblock %}
+
+{% block endscript %}
+<script>
+(function () {
+  // Simple filter: by question name or lecturer
+  const filterInput = document.getElementById('questionFilter');
+  const rows = Array.from(document.querySelectorAll('#questionsTable tbody tr.q-row'));
+  const checks = () => rows.filter(r => r.style.display !== 'none')
+                           .map(r => r.querySelector('input.q-check'));
+
+  function normalize(s) { return (s || '').toString().trim().toLowerCase(); }
+
+  filterInput?.addEventListener('input', function(){
+    const q = normalize(this.value);
+    rows.forEach(r => {
+      const name = r.getAttribute('data-q-name') || '';
+      const lec  = r.getAttribute('data-q-lecturer') || '';
+      const match = !q || name.includes(q) || lec.includes(q);
+      r.style.display = match ? '' : 'none';
+    });
+  });
+
+  // Select/Clear only visible (filtered) rows to avoid surprising users
+  document.getElementById('selectAll')?.addEventListener('click', () => {
+    checks().forEach(cb => { cb.checked = true; });
+  });
+  document.getElementById('clearAll')?.addEventListener('click', () => {
+    checks().forEach(cb => { cb.checked = false; });
+  });
+})();
+</script>
+{% endblock %}

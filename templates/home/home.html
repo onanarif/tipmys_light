@@ -1,0 +1,73 @@
+﻿{% load i18n %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>AU Tıp Fakültesi{% block title %}{% endblock %}</title>
+    <!-- favicon -->
+    <link rel="shortcut icon" type="image/x-icon" href="https://www.akdeniz.edu.tr/assets/images/favicon.ico">
+    <link href="{% static 'assets/css/styles.css' %}" rel="stylesheet" />
+    {% block extrastyle %}
+
+    {% endblock extrastyle %}
+
+</head>
+
+
+
+    {% block extrascript %}
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    {% endblock extrascript %}
+<body class="sb-nav-fixed">
+    {% include 'inc/navigation.html' %}
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            {% if user.is_authenticated %}
+            {% include 'inc/sidenav.html' %}
+            {% endif %}
+        </div>
+        <div id="layoutSidenav_content">
+            <main>
+                {% if user.is_authenticated %}
+                <div class="container-fluid px-4">
+                    <h3 class="mt-4"> Tıp Fakültesi Müfredat Yönetim Sistemi uygulamasına hoş geldiniz. </h3>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            Eğitim içeriğine ulaşmak için yetkilisiniz. 
+                        </div>
+                        <div class="small">Çıkış için <a href="{% url 'logout' %}">tıklayınız.</a> </div>
+                    </div>
+                <div>
+                {%else%}  
+                <div class="container-fluid px-4">
+                    <h3 class="mt-4"> Tıp Fakültesi eğitim uygulamalarına hoş geldiniz. </h3>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            Yetkilendirilmiş içeriğe ulaşmak için giriş yapmanız gerekmektedir.
+                        </div>
+                        <div class="small"><a href="{% url 'login' %}">Hesabınız varsa giriş yapabilirsiniz.</a></div>
+                    </div>
+                </div>
+
+
+
+
+
+                {% endif %}                      
+            </main>
+            {% include 'inc/footer.html' %}
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'assets/js/scripts.js' %}"></script>
+    {% block endscript %}
+    
+    {% endblock endscript %}
+</body>
+</html>

@@ -1,0 +1,178 @@
+{% extends "inc/base.html" %}
+{% load static %}
+{% block title %}Sınavlar{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Sınavlar</h2>
+    {% if request.user.is_superuser %}
+      <a class="btn btn-success" href="{% url 'qbank:examsetup_create' %}">+ Yeni Sınav</a>
+    {% endif %}
+  </div>
+
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} mb-2">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="get" class="row g-2 align-items-end mb-3" id="filtersForm">
+    <div class="col-sm-4">
+      <label class="form-label">Ara</label>
+      <input class="form-control" type="search" name="q" value="{{ request.GET.q }}" placeholder="Sınav adı...">
+    </div>
+
+    <div class="col-sm-3">
+      <label class="form-label">Tür</label>
+      <select class="form-select select2" name="type" data-placeholder="Tür">
+        <option value=""></option>
+        <option value="theoric" {% if request.GET.type == "theoric" %}selected{% endif %}>Teorik</option>
+        <option value="pratic" {% if request.GET.type == "pratic" %}selected{% endif %}>Pratik</option>
+        <option value="final" {% if request.GET.type == "final" %}selected{% endif %}>Final</option>
+        <option value="final_pratic" {% if request.GET.type == "final_pratic" %}selected{% endif %}>Final Pratik</option>
+      </select>
+    </div>
+
+    <div class="col-sm-3">
+      <label class="form-label">Program</label>
+      <select class="form-select select2" name="program" data-placeholder="Program">
+        <option value=""></option>
+        {% for p in programs %}
+          <option value="{{ p.id }}" {% if request.GET.program == p.id|stringformat:"s" %}selected{% endif %}>
+            {{ p.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-sm-3">
+      <label class="form-label">Kurul/Staj</label>
+      <select class="form-select select2" name="committee" data-placeholder="Kurul/Staj">
+        <option value=""></option>
+        {% for c in committees %}
+          <option value="{{ c.id }}" {% if request.GET.committee == c.id|stringformat:"s" %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-sm-2">
+      <label class="form-label">Kilit</label>
+      <select class="form-select" name="locked">
+        <option value="">Hepsi</option>
+        <option value="1" {% if request.GET.locked == "1" %}selected{% endif %}>Kilitli</option>
+        <option value="0" {% if request.GET.locked == "0" %}selected{% endif %}>Açık</option>
+      </select>
+    </div>
+
+    <div class="col-sm-2">
+      <button class="btn btn-primary w-100" type="submit">Filtrele</button>
+    </div>
+    <div class="col-sm-2">
+      <a href="{% url 'qbank:examsetup_list' %}" class="btn btn-outline-secondary w-100">Temizle</a>
+    </div>
+  </form>
+
+
+  <table class="table table-bordered table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Ad</th>
+        <th>Tür</th>
+        <th>Tarih</th>
+        <th>Başlangıç</th>
+        <th>Bitiş</th>
+        <th>Soru</th>
+        <th>Program</th>
+        <th>Kurul/Staj</th>
+        <th class="text-end">İşlemler</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in exams %}
+      <tr>
+        <td>{{ e.name }}</td>
+        <td>{{ e.get_type_display }}</td>
+        <td>{{ e.date|date:"Y-m-d" }}</td>
+        <td>{{ e.start|date:"Y-m-d H:i" }}</td>
+        <td>{{ e.finish|date:"Y-m-d H:i" }}</td>
+        <td>{{ e.qtotal|default:"—" }}</td>
+        <td>{{ e.program }}</td>
+        <td>{{ e.committee }}</td>
+        <td class="text-end">
+          <a href="{% url 'qbank:examsetup_detail_questions' e.pk %}" class="btn btn-sm btn-outline-secondary">Detay</a>
+          {% if request.user.is_superuser %}
+            <a href="{% url 'qbank:examsetup_update' e.pk %}" class="btn btn-sm btn-outline-primary">Düzenle</a>
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteConfirmModal"
+                    data-delete-url="{% url 'qbank:examsetup_delete' e.pk %}"
+                    data-exam-name="{{ e.name|escape }}">
+              Sil
+            </button>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" class="text-muted">Kayıt bulunamadı.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# Reusable delete modal (same pattern as committee list) #}
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="deleteConfirmForm" method="post" action="#">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteConfirmLabel">Silme Onayı</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0"><strong id="deleteItemName">Bu sınav</strong> silinsin mi?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
+          <button type="submit" class="btn btn-danger">Evet, sil</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var modal = document.getElementById('deleteConfirmModal');
+  if (!modal) return;
+  modal.addEventListener('show.bs.modal', function (event) {
+    var trigger = event.relatedTarget;
+    var url = trigger && trigger.getAttribute('data-delete-url');
+    var name = trigger && trigger.getAttribute('data-exam-name');
+    document.getElementById('deleteConfirmForm').setAttribute('action', url || '#');
+    document.getElementById('deleteItemName').textContent = name || 'Bu sınav';
+  });
+
+  // Select2
+  function widthResolver(){ return '100%'; }
+  $('.select2').select2({
+    theme: 'bootstrap-5',
+    width: widthResolver(),
+    allowClear: true,
+    placeholder: function(){ return $(this).data('placeholder') || 'Seçiniz'; }
+  });
+})();
+</script>
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js"></script>
+{% endblock %}

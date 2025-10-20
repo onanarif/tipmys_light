@@ -1,0 +1,4 @@
+from .course_master_v import CourseMasterDetailView, CourseMasterListView, CourseMasterCreateView, CourseMasterUpdateView, CourseMasterDeleteView
+from .course_question_depot_v import QuestionListView, QuestionDetailView, QuestionCreateView, QuestionUpdateView, question_delete, QuestionListByMasterView
+from .examsetup_v import ExamSetupListView, ExamSetupCreateView, ExamSetupUpdateView, ExamSetupDetailView, examsetup_delete
+from .permissions_v import can_manage_course_questions

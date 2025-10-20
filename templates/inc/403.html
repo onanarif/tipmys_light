@@ -1,0 +1,40 @@
+{% load i18n %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    {% include 'inc/head.html' %}
+    {% block extrascript %}
+    {% endblock extrascript %}
+<body class="sb-nav-fixed">
+    {% include 'inc/navigation.html' %}
+    <div id="layoutSidenav">
+        <div id="layoutSidenav_nav">
+            {% include 'inc/sidenav.html' %}
+        </div>
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4">
+                    <h3 class="mt-4"> Bilgilendirme </h3>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h3>Erişim Engeli</h3>
+    <p>Bu sayfaya erişim izniniz bulunmamaktadır. Bunun bir hata olduğunu düşünüyorsanız lütfen site yöneticisi ile iletişime geçiniz.</p>
+                        </div>
+                    </div>
+             
+
+                    <div>
+
+		    </div>
+                </div>
+            </main>
+            {% include 'inc/footer.html' %}
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'assets/js/scripts.js' %}"></script>
+    {% block endscript %}
+    
+    {% endblock endscript %}
+</body>
+</html>

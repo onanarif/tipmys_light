@@ -1,0 +1,140 @@
+{% extends "inc/base.html" %}
+{% load static %}
+{% block title %}{{ course.name }} – Ders Detayı{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h2 class="mb-1">{{ course.name }}</h2>
+      <div class="d-flex gap-2">
+        {% if course.active %}
+          <span class="badge bg-success">Aktif</span>
+        {% else %}
+          <span class="badge bg-secondary">Pasif</span>
+        {% endif %}
+        {% if course.multilecture %}
+          <span class="badge bg-info">Çoklu</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      {% if course.committee_id %}
+        <a class="btn btn-outline-primary"
+           href="{% url 'faculty:committee_detail' course.committee_id %}">
+          Komiteye Git
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Özellikler -->
+  <div class="row g-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">Özet</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+
+            <dt class="col-sm-3">Komite</dt>
+            <dd class="col-sm-9">
+              {% if course.committee %}
+                <a href="{% url 'faculty:committee_detail' course.committee.pk %}">
+                  {{ course.committee.name }}
+                </a>
+              {% else %}—{% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Öğretim Üyesi</dt>
+            <dd class="col-sm-9">
+              {% if course.lecturer and course.lecturer.user %}
+                {{ course.lecturer.user.get_full_name }}
+              {% else %}—{% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Bölüm</dt>
+            <dd class="col-sm-9">
+              {{ course.department.name|default:"—" }}
+            </dd>
+
+            <dt class="col-sm-3">Tür</dt>
+            <dd class="col-sm-9">
+              {{ course.type.name|default:"—" }}
+            </dd>
+
+            <dt class="col-sm-3">Oluşturulma</dt>
+            <dd class="col-sm-9">
+              {% if course.created_at %}{{ course.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Güncellenme</dt>
+            <dd class="col-sm-9">
+              {% if course.updated_at %}{{ course.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+            </dd>
+
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# --- SORULAR (İLGİLİ SORU LİSTESİ) --- #}
+  <div class="row g-3 mt-0">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Sorular</span>
+          <span class="badge bg-secondary">
+            {{ course.questions|length }} adet
+          </span>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Ad</th>
+                <th>Öğretim Üyesi</th>
+                <th>Tür</th>
+                <th>Resim</th>
+                <th>Durum</th>
+                <th>Oluşturulma</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for q in course.questions.all %}
+                <tr>
+                  <td>{{ q.name }}</td>
+                  <td>
+                    {% if q.lecturer and q.lecturer.user %}
+                      {{ q.lecturer.user.get_full_name }}
+                    {% else %}—{% endif %}
+                  </td>
+                  <td>{{ q.get_type_display|default:q.type }}</td>
+                  <td>{% if q.picture %}<span class="badge bg-info">Var</span>{% else %}<span class="badge bg-secondary">Yok</span>{% endif %}</td>
+                  <td>
+                    {% if q.active and not q.hidden %}
+                      <span class="badge bg-success">Aktif</span>
+                    {% elif q.hidden %}
+                      <span class="badge bg-warning text-dark">Gizli</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Pasif</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ q.created_at|date:"d.m.Y H:i" }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="6" class="text-muted">Bu derse ait soru bulunmuyor.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends "inc/base.html" %}
+{% load i18n %}
+{% block title %}{{ committee.name }} — {% trans "Questions" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <div>
+      <h3 class="mb-0">{{ committee.name }}</h3>
+      <div class="text-muted">
+        {% trans "Program (Phase)" %}: {{ committee.phase.name }} |
+        {% trans "Chair" %}:
+        {% if committee.chair and committee.chair.user %}
+          {{ committee.chair.user.first_name }} {{ committee.chair.user.last_name }}
+        {% else %} — {% endif %}
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="{{ committee.get_absolute_url }}">
+        {% trans "Committee page" %}
+      </a>
+    </div>
+  </div>
+
+  <hr class="my-3"/>
+
+  <!-- Filters -->
+  <form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-lg-4">
+      <label class="form-label">{% trans "Search" %}</label>
+      <input type="text" class="form-control" name="q" value="{{ f_q }}" placeholder="{% trans 'Question / Course / Lecturer...' %}">
+    </div>
+
+    <div class="col-lg-3">
+      <label class="form-label">{% trans "Course" %}</label>
+      <select class="form-select" name="master">
+        <option value="">{% trans "All" %}</option>
+        {% for m in masters %}
+          <option value="{{ m.id }}" {% if f_master == m.id|stringformat:"s" %}selected{% endif %}>
+            {{ m.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-lg-2">
+      <label class="form-label">{% trans "Type" %}</label>
+      <select class="form-select" name="type">
+        <option value="">{% trans "All" %}</option>
+        <option value="theoric" {% if f_type == "theoric" %}selected{% endif %}>{% trans "Theoric" %}</option>
+        <option value="pratic"  {% if f_type == "pratic" %}selected{% endif %}>{% trans "Pratic" %}</option>
+      </select>
+    </div>
+
+    <div class="col-lg-2">
+      <label class="form-label">{% trans "Active" %}</label>
+      <select class="form-select" name="active">
+        <option value="">{% trans "All" %}</option>
+        <option value="1" {% if f_active == "1" %}selected{% endif %}>{% trans "Yes" %}</option>
+        <option value="0" {% if f_active == "0" %}selected{% endif %}>{% trans "No" %}</option>
+      </select>
+    </div>
+
+    <div class="col-lg-1 d-grid">
+      <button class="btn btn-primary">{% trans "Filter" %}</button>
+    </div>
+  </form>
+
+  <!-- Questions table -->
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:34%">{% trans "Question" %}</th>
+            <th style="width:22%">{% trans "Course" %}</th>
+            <th style="width:18%">{% trans "Lecturer" %}</th>
+            <th class="text-center" style="width:8%">{% trans "Type" %}</th>
+            <th class="text-center" style="width:8%">{% trans "Active" %}</th>
+            <th class="text-end" style="width:10%"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for q in questions %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ q.name }}</div>
+                <div class="text-muted small">
+                  {{ q.updated_at|date:"d.m.Y H:i" }}
+                </div>
+              </td>
+              <td>{{ q.master.name }}</td>
+              <td>
+                {% if q.lecturer and q.lecturer.user %}
+                  {{ q.lecturer.user.first_name }} {{ q.lecturer.user.last_name }}
+                {% else %} — {% endif %}
+              </td>
+              <td class="text-center">
+                {% if q.get_type_display %}
+                  {{ q.get_type_display }}
+                {% else %}
+                  {{ q.type }}
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if q.active %}
+                  <span class="badge bg-success">{% trans "Yes" %}</span>
+                {% else %}
+                  <span class="badge bg-secondary">{% trans "No" %}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <div class="btn-group">
+                  <a class="btn btn-outline-primary btn-sm"
+                     href="{% url 'qbank:question_detail' q.id %}">
+                    {% trans "Open" %}
+                  </a>
+                  <a class="btn btn-outline-secondary btn-sm"
+                     href="{% url 'qbank:question_update' q.id %}">
+                    {% trans "Edit" %}
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-4">
+                {% trans "No questions found." %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+      <div class="card-footer">
+        <nav>
+          <ul class="pagination mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ f_q }}&master={{ f_master }}&type={{ f_type }}&active={{ f_active }}">&laquo;</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            {% endif %}
+
+            {% for i in paginator.page_range %}
+              {% if i == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+              {% else %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ i }}&q={{ f_q }}&master={{ f_master }}&type={{ f_type }}&active={{ f_active }}">{{ i }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ f_q }}&master={{ f_master }}&type={{ f_type }}&active={{ f_active }}">&raquo;</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

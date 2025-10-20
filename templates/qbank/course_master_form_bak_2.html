@@ -1,0 +1,59 @@
+{% extends "inc/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">
+    {% if form.instance.pk %}{% trans "Dersi Güncelle" %}{% else %}{% trans "Yeni Ders" %}{% endif %}
+  </h2>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-8">
+        <label class="form-label">{% trans "Ad" %}</label>
+        {{ form.name }}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">{% trans "Tür" %}</label>
+        {{ form.type }}
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">{% trans "Öğretim Üyesi" %}</label>
+        {{ form.lecturer }}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">{% trans "Komite" %}</label>
+        {{ form.committee }}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">{% trans "Bölüm" %}</label>
+        {{ form.department }}
+        {{ form.department_display }}
+      </div>
+
+      <div class="col-md-4">
+        <div class="form-check mt-4">
+          {{ form.multilecture }} <label class="form-check-label">{% trans "Çok öğretim üyesi" %}</label>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">{% trans "Etkinlik Sayısı" %}</label>
+        {{ form.event_count }}
+      </div>
+      <div class="col-md-4">
+        <div class="form-check mt-4">
+          {{ form.active }} <label class="form-check-label">{% trans "Aktif" %}</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+      <button class="btn btn-primary" type="submit">{% trans "Kaydet" %}</button>
+      <a class="btn btn-secondary" href="{% url 'qbank:course_master_list' %}">{% trans "Vazgeç" %}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

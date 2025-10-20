@@ -1,0 +1,132 @@
+{% extends 'inc/base.html' %}
+{% load static %}
+{% block title %}{{ committee.name }} – Kurul/Staj Detayı{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h2 class="mb-1">{{ committee.name }}</h2>
+      <div class="text-muted">
+        {% if committee.phase %}
+          <span class="badge bg-info">{{ committee.phase.name }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      {# <a href="{% url 'committee_update' committee.pk %}" class="btn btn-primary">Düzenle</a> #}
+      {# <a href="{% url 'committee_delete' committee.pk %}" class="btn btn-outline-danger">Sil</a> #}
+    </div>
+  </div>
+
+  <!-- Özet card -->
+  <div class="row g-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">Detay</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-3">Program (Dönem) </dt>
+            <dd class="col-sm-9">
+              {% if committee.phase %}{{ committee.phase.name }}{% else %}—{% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Koordinatör</dt>
+            <dd class="col-sm-9">
+              {% if committee.chair and committee.chair.user %}
+                {{ committee.chair.user.get_full_name }}
+              {% else %}
+                —
+              {% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Başlangıç Tarihi</dt>
+            <dd class="col-sm-9">
+              {% if committee.start_date %}
+                {{ committee.start_date|date:"d.m.Y" }}
+              {% else %}—{% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Bitiş Tarihi</dt>
+            <dd class="col-sm-9">
+              {% if committee.end_date %}
+                {{ committee.end_date|date:"d.m.Y" }}
+              {% else %}—{% endif %}
+            </dd>
+
+            {% if committee.description %}
+              <dt class="col-sm-3">Açıklama</dt>
+              <dd class="col-sm-9">
+                {{ committee.description }}
+              </dd>
+            {% endif %}
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dersler card -->
+  <div class="row g-3 mt-0">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">Dersler</div>
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Ders</th>
+                <th>Akademisyen</th>
+                <th>Bölüm</th>
+                <th>Tür</th>    
+                <th>Saat</th>                              
+                <th>Çoklu</th>
+                <th>Durum</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for course in courses %}
+                <tr>
+                  <td>
+                    <a href="{% url 'qbank:course_master_detail' course.pk %}">{{ course.name }}</a>
+                  </td>
+                  
+                  <td>
+                    {% if course.lecturer and course.lecturer.user %}
+                      {{ course.lecturer.user.get_full_name }}
+                    {% else %}—{% endif %}
+                  </td>
+                  <td>{{ course.department.name|default:"—" }}</td>
+                  <td>{{ course.type.name|default:"—" }}</td>
+                  <td>{{ course.event_count }}</td>                  
+                  <td>
+                    {% if course.multilecture %}
+                      <span class="badge bg-info">Evet</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Hayır</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if course.active %}
+                      <span class="badge bg-success">Aktif</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Pasif</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="6" class="text-muted">Bu Kurul/Staja bağlı ders bulunmuyor.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

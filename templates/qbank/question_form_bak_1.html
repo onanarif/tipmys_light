@@ -1,0 +1,212 @@
+{% extends "inc/base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Soruyu Düzenle{% else %}Yeni Soru{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">{% if form.instance.pk %}Soruyu Düzenle{% else %}Yeni Soru{% endif %}</h2>
+    <a class="btn btn-secondary" href="{% url 'qbank:question_list' %}">Listeye Dön</a>
+  </div>
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-bold">Temel Bilgiler</div>
+      <div class="card-body row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Ders (CourseMaster)</label>
+          {{ form.master }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Soru Adı</label>
+          {{ form.name }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Öğretim Üyesi</label>
+          {# either hidden + display or select2, as set in form __init__ #}
+          {{ form.lecturer }} {{ form.lecturer_display }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Tür</label>
+          {{ form.type }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Aktif</label><br>
+          {{ form.active }}
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Soru Metni</label>
+          {{ form.question_text }}
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Genel Geri Bildirim</label>
+          {{ form.general_feedback }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-bold">Değerlendirme</div>
+      <div class="card-body row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Not (default_grade)</label>
+          {{ form.default_grade }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Ceza (penalty)</label>
+          {{ form.penalty }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Doğru sayısını göster</label>
+          {{ form.show_num_correct }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Resim var mı?</label><br>
+          {{ form.picture }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-bold">Davranış & Yönergeler</div>
+      <div class="card-body row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Tek seçmeli</label><br>
+          {{ form.single }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Şıkları karıştır</label><br>
+          {{ form.shuffle_answers }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Şık numaralandırma</label>
+          {{ form.answer_numbering }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Standart yönerge</label><br>
+          {{ form.show_standard_instruction }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Doğru cevap</label>
+          {{ form.correct_answer }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">ID (opsiyonel)</label>
+          {{ form.id_number }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-bold">Şıklar (A–E)</div>
+      <div class="card-body row g-3">
+        <div class="col-md-8">
+          <label class="form-label">A</label>
+          {{ form.answer_1_text }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">A puan</label>
+          {{ form.answer_1_fraction }}
+        </div>
+
+        <div class="col-md-8">
+          <label class="form-label">B</label>
+          {{ form.answer_2_text }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">B puan</label>
+          {{ form.answer_2_fraction }}
+        </div>
+
+        <div class="col-md-8">
+          <label class="form-label">C</label>
+          {{ form.answer_3_text }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">C puan</label>
+          {{ form.answer_3_fraction }}
+        </div>
+
+        <div class="col-md-8">
+          <label class="form-label">D</label>
+          {{ form.answer_4_text }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">D puan</label>
+          {{ form.answer_4_fraction }}
+        </div>
+
+        <div class="col-md-8">
+          <label class="form-label">E</label>
+          {{ form.answer_5_text }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">E puan</label>
+          {{ form.answer_5_fraction }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-bold">Geri Bildirim Metinleri</div>
+      <div class="card-body row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Doğru</label>
+          {{ form.correct_feedback }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Kısmi Doğru</label>
+          {{ form.partially_correct_feedback }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Yanlış</label>
+          {{ form.incorrect_feedback }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-bold">Etiketler</div>
+      <div class="card-body row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Etiket 1 (Ders)</label>
+          {{ form.tag_1 }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Etiket 2 (Öğretim Üyesi)</label>
+          {{ form.tag_2 }}
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" type="submit">Kaydet</button>
+      <a class="btn btn-outline-secondary" href="{% url 'qbank:question_list' %}">Vazgeç</a>
+    </div>
+  </form>
+</div>
+
+<!-- Select2 assets -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js"></script>
+<script>
+(function(){
+  function widthResolver(){ return '100%'; }
+  $('.select2').select2({
+    theme: 'bootstrap-5',
+    width: widthResolver(),
+    allowClear: true,
+    placeholder: function(){ return $(this).data('placeholder') || 'Seçiniz'; }
+  });
+})();
+</script>
+{% endblock %}

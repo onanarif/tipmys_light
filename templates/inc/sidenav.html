@@ -1,0 +1,43 @@
+﻿<div class="sb-sidenav sb-sidenav-light">
+    <div class="sb-sidenav-menu">
+        <div class="nav">
+            <div class="sb-sidenav-menu-heading">Akademik</div>
+            {% if user.is_authenticated %}
+            <a class="nav-link" href="{% url 'faculty:committee_with_exams_list'%}">
+                <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                Sınava soru seç
+            </a>
+            {% endif %}            
+
+            <div class="sb-sidenav-menu-heading">Program</div>
+            {% if user.is_authenticated%}
+            <a class="nav-link" href="{% url 'faculty:committee_list'%}">
+                <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                Kurul / Staj
+            </a>
+
+            <a class="nav-link" href="{% url 'qbank:course_master_list'%}">
+                <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                Dersler
+            </a>   
+            
+            <a class="nav-link" href="{% url 'qbank:question_list'%}">
+                <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                Sorular
+            </a>         
+            
+            <a class="nav-link" href="{% url 'qbank:examsetup_list'%}">
+                <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                Sınavlar
+            </a>                 
+            {% endif %}
+
+            
+                    
+        </div>
+    </div>
+    <div class="sb-sidenav-footer">
+        <div class="small">Giriş yapan: </div>
+        <h8>{{user.email}}</h8>
+    </div>
+</div>

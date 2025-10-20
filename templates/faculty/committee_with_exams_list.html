@@ -1,0 +1,173 @@
+{% extends "inc/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Kurul/Staj ve ilgili Sınavlar" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">{% trans "Kurul/Staj ve ilgili Sınavlar" %}</h3>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-md-4">
+      <label class="form-label">{% trans "Ara" %}</label>
+      <input type="text" class="form-control" name="q" value="{{ f_q }}" placeholder="{% trans 'Kurul/Staj adı...' %}">
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">{% trans "Program (Dönem)" %}</label>
+      <select class="form-select" name="phase">
+        <option value="">{% trans "Tümü" %}</option>
+        {% for p in programs %}
+          <option value="{{ p.id }}" {% if f_phase|add:'' == p.id|stringformat:"s" %}selected{% endif %}>
+            {{ p.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">{% trans "Sınav durumu" %}</label>
+      <select class="form-select" name="has_exams">
+        <option value="">{% trans "Tümü" %}</option>
+        <option value="1" {% if f_has_exams == "1" %}selected{% endif %}>{% trans "Sınav var" %}</option>
+        <option value="0" {% if f_has_exams == "0" %}selected{% endif %}>{% trans "Sınav yok" %}</option>
+      </select>
+    </div>
+
+    <div class="col-md-2 d-grid">
+      <button class="btn btn-primary">{% trans "Filtele" %}</button>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:24%">{% trans "Kurul/Staj" %}</th>
+            <th style="width:12%">{% trans "Program" %}</th>
+            <th style="width:16%">{% trans "Koordinatör" %}</th>
+            <th class="text-center" style="width:8%">{% trans "Sınav satısı" %}</th>
+            <th style="width:14%">{% trans "Yaklaşan sınav" %}</th>
+            <th style="width:26%">{% trans "Sınavlar" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in committees %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ c.name }}</div>
+                {% if c.last_exam_start %}
+                  <div class="text-muted small">
+                    {% trans "Last exam" %}: {{ c.last_exam_start|date:"d.m.Y H:i" }}
+                  </div>
+                {% endif %}
+              </td>
+
+              <td>{{ c.phase.name }}</td>
+
+              <td>
+                {% if c.chair and c.chair.user %}
+                  {{ c.chair.user.first_name }} {{ c.chair.user.last_name }}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <td class="text-center">
+                {% if c.exam_count > 0 %}
+                  <span class="badge bg-success">{{ c.exam_count }}</span>
+                {% else %}
+                  <span class="badge bg-secondary">0</span>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if c.next_exam_start %}
+                  <div>{{ c.next_exam_start|date:"d.m.Y H:i" }}</div>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+
+              <td>
+                <!-- Inline exam chips -->
+                <div class="d-flex flex-wrap gap-1">
+                  {% if c.inline_upcoming %}
+                    {% for ex in c.inline_upcoming %}
+                      <a class="badge rounded-pill text-bg-primary text-decoration-none"
+                         href="{% url 'qbank:examsetup_detail' ex.id %}"
+                         title="{{ ex.name }} — {{ ex.start|date:'d.m.Y H:i' }}">
+                        🗓️ {{ ex.start|date:"d.m H:i" }} · {{ ex.get_type_display|default:ex.type }}
+                      </a>
+                    {% endfor %}
+                  {% endif %}
+
+                  {% if c.inline_recent %}
+                    {% for ex in c.inline_recent %}
+                      <a class="badge rounded-pill text-bg-secondary text-decoration-none"
+                         href="{% url 'qbank:examsetup_detail' ex.id %}"
+                         title="{{ ex.name }} — {{ ex.start|date:'d.m.Y H:i' }}">
+                        ⏪ {{ ex.start|date:"d.m H:i" }} · {{ ex.get_type_display|default:ex.type }}
+                      </a>
+                    {% endfor %}
+                  {% endif %}
+
+                  {% if not c.inline_upcoming and not c.inline_recent %}
+                    <span class="text-muted small">—</span>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-4">
+                {% trans "No committees found." %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+      <div class="card-footer">
+        <nav>
+          <ul class="pagination mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ f_q }}&phase={{ f_phase }}&has_exams={{ f_has_exams }}">&laquo;</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            {% endif %}
+
+            {% for i in paginator.page_range %}
+              {% if i == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+              {% else %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ i }}&q={{ f_q }}&phase={{ f_phase }}&has_exams={{ f_has_exams }}">{{ i }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ f_q }}&phase={{ f_phase }}&has_exams={{ f_has_exams }}">&raquo;</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+

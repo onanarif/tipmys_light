@@ -1,0 +1,101 @@
+{% extends "inc/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ committee.name }} — {% trans "Committee Detail" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+  <!-- Header / Breadcrumb -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">{{ committee.name }}</h3>
+    <div class="text-muted">
+      {% if committee.phase %}{{ committee.phase.name }}{% endif %}
+    </div>
+  </div>
+
+  <!-- Committee summary -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="fw-semibold">{% trans "Program (Phase)" %}</div>
+          <div>{{ committee.phase.name|default:"—" }}</div>
+        </div>
+        <div class="col-md-4">
+          <div class="fw-semibold">{% trans "Chair" %}</div>
+          <div>
+            {% if committee.chair and committee.chair.user %}
+              {{ committee.chair.user.first_name }} {{ committee.chair.user.last_name }}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="fw-semibold">{% trans "Date range" %}</div>
+          <div>
+            {{ committee.start_date|date:"d.m.Y" }} — {{ committee.end_date|date:"d.m.Y" }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Courses below -->
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <h5 class="mb-0">{% trans "Related Courses" %}</h5>
+    <span class="badge bg-secondary">{{ course_count }}</span>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:34%">{% trans "Course" %}</th>
+            <th style="width:20%">{% trans "Lecturer" %}</th>
+            <th style="width:20%">{% trans "Department" %}</th>
+            <th style="width:12%">{% trans "Type" %}</th>
+            <th class="text-center" style="width:14%">{% trans "Status" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course in courses %}
+            <tr>
+              <td>
+                <a class="fw-semibold text-decoration-none"
+                   href="{% url 'qbank:course_master_detail' course.id %}">
+                  {{ course.name }}
+                </a>
+              </td>
+              <td>
+                {% if course.lecturer and course.lecturer.user %}
+                  {{ course.lecturer.user.first_name }} {{ course.lecturer.user.last_name }}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td>{{ course.department.name|default:"—" }}</td>
+              <td>{{ course.type.name|default:"—" }}</td>
+              <td class="text-center">
+                {% if course.active %}
+                  <span class="badge bg-success">{% trans "Active" %}</span>
+                {% else %}
+                  <span class="badge bg-secondary">{% trans "Inactive" %}</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">
+                {% trans "No courses found for this committee." %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

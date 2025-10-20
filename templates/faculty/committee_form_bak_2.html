@@ -1,0 +1,45 @@
+{% extends 'inc/base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Komiteyi Düzenle{% else %}Yeni Komite{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">
+      {% if form.instance.pk %}Komiteyi Düzenle{% else %}Yeni Komite{% endif %}
+    </h2>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Ad</label>
+        {{ form.name }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Aşama</label>
+        {{ form.phase }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Başkan</label>
+        {{ form.chair }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Başlangıç Tarihi</label>
+        {{ form.start_date }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Bitiş Tarihi</label>
+        {{ form.end_date }}
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Kaydet</button>
+      <a href="{% url 'faculty:committee_list' %}" class="btn btn-secondary">Vazgeç</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

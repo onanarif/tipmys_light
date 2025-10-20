@@ -1,0 +1,23 @@
+﻿{% load i18n %}
+{% load static %}
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>UU Tıp Fakültesi{% block title %}{% endblock %}</title>
+    <!-- favicon -->
+    <link rel="shortcut icon" type="image/x-icon" href="https://www.akdeniz.edu.tr/assets/images/favicon.ico">
+    <link href="{% static 'assets/css/styles.css' %}" rel="stylesheet" />
+    {% block extrastyle %}
+    body {
+        -webkit-user-select: none; /* Safari */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+        user-select: none; /* Standard syntax */
+    }
+    {% endblock extrastyle %}
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    {% block extrascript %}{% endblock extrascript %}
+</head>

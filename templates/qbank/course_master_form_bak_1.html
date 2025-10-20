@@ -1,0 +1,141 @@
+{# qbank/templates/qbank/course_master_form.html #}
+{% extends "inc/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block title %}{% if form.instance.pk %}Ders Güncelle{% else %}Yeni Ders{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">{% if form.instance.pk %}Ders Güncelle{% else %}Yeni Ders{% endif %}</h2>
+    <div class="d-flex gap-2">
+      {% if form.instance.pk %}
+        <a class="btn btn-outline-secondary" href="{% url 'qbank:course_master_detail' form.instance.pk %}">Detaya Dön</a>
+        <a class="btn btn-outline-danger" href="{% url 'qbank:course_master_delete' form.instance.pk %}">Sil</a>
+      {% else %}
+        <a class="btn btn-outline-secondary" href="{% url 'qbank:course_master_list' %}">Listeye Dön</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} mb-2">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form|crispy }}
+
+        <div class="d-flex gap-2 mt-3">
+          <button type="submit" class="btn btn-primary">Kaydet</button>
+          {% if form.instance.pk %}
+            <a href="{% url 'qbank:course_master_detail' form.instance.pk %}" class="btn btn-outline-secondary">Vazgeç</a>
+          {% else %}
+            <a href="{% url 'qbank:course_master_list' %}" class="btn btn-outline-secondary">Vazgeç</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if form.instance.pk %}
+    <div class="alert alert-info mt-3 mb-0 small">
+      #{{ form.instance.pk }}{% if form.instance.committee_id %} • Komite: {{ form.instance.committee.name }}{% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+{{ form.media.css }}
+<style>
+.select2-container {
+    width: 100% !important;
+}
+</style>
+{% endblock %}
+
+{% block endscript %}
+{{ block.super }}
+{{ form.media.js }}
+<script>
+$(document).ready(function() {
+    // Handle department change to clear lecturer selection
+    $('#id_department').on('change', function() {
+        var lecturerField = $('#id_lecturer');
+        
+        // Clear the lecturer selection when department changes
+        lecturerField.val(null).trigger('change');
+        
+        // Update placeholder text based on department selection
+        if ($(this).val()) {
+            lecturerField.attr('data-placeholder', 'Öğretim üyesi seçin...');
+        } else {
+            lecturerField.attr('data-placeholder', 'Önce bölüm seçin...');
+        }
+        
+        // Reinitialize select2 to show updated placeholder
+        if (lecturerField.hasClass('select2-hidden-accessible')) {
+            lecturerField.select2('destroy').select2({
+                placeholder: lecturerField.attr('data-placeholder')
+            });
+        }
+    });
+
+    // Initialize lecturer field state on page load
+    var departmentField = $('#id_department');
+    var lecturerField = $('#id_lecturer');
+    
+    if (!departmentField.val()) {
+        lecturerField.attr('data-placeholder', 'Önce bölüm seçin...');
+        if (lecturerField.hasClass('select2-hidden-accessible')) {
+            lecturerField.select2('destroy').select2({
+                placeholder: 'Önce bölüm seçin...'
+            });
+        }
+    }
+
+    // Show warning when lecturer doesn't match department (client-side validation)
+    function validateLecturerDepartment() {
+        var departmentId = $('#id_department').val();
+        var lecturerSelect = $('#id_lecturer');
+        var selectedOption = lecturerSelect.find('option:selected');
+        
+        // Remove any existing warnings
+        $('.lecturer-department-warning').remove();
+        
+        if (departmentId && lecturerSelect.val() && selectedOption.length > 0) {
+            var lecturerText = selectedOption.text();
+            var lecturerDepartment = lecturerText.split(' — ')[1];
+            var selectedDepartmentText = $('#id_department option:selected').text();
+            
+            if (lecturerDepartment && lecturerDepartment !== selectedDepartmentText && lecturerDepartment !== '—') {
+                var warningHtml = '<div class="alert alert-warning mt-2 lecturer-department-warning small">' +
+                    '<i class="fas fa-exclamation-triangle"></i> ' +
+                    'Uyarı: Seçilen öğretim üyesi farklı bir bölümde görevli. Kaydetmeden önce kontrol edin.' +
+                    '</div>';
+                lecturerSelect.closest('.form-group, .col-md-6').append(warningHtml);
+            }
+        }
+    }
+
+    // Validate on lecturer change
+    $('#id_lecturer').on('change', validateLecturerDepartment);
+    
+    // Validate on department change
+    $('#id_department').on('change', function() {
+        setTimeout(validateLecturerDepartment, 100);
+    });
+
+    // Initial validation on page load
+    setTimeout(validateLecturerDepartment, 500);
+});
+</script>
+{% endblock %}

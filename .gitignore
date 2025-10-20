@@ -1,0 +1,29 @@
+cat > .gitignore << 'EOF'
+__pycache__/
+*.py[cod]
+*.log
+
+# virtualenvs
+.venv/
+venv/
+env/
+ENV/
+
+# Django
+db.sqlite3
+staticfiles/
+staticroot/
+media/
+
+# local secrets
+.env
+.env.*
+**/settings_local.py
+**/local_settings.py
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+EOF

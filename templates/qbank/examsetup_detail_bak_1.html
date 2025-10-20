@@ -1,0 +1,22 @@
+{% extends "inc/base.html" %}
+{% block title %}Sınav Detayı{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>{{ exam.name }}</h2>
+  <dl class="row">
+    <dt class="col-sm-3">Tür</dt><dd class="col-sm-9">{{ exam.get_type_display }}</dd>
+    <dt class="col-sm-3">Tarih</dt><dd class="col-sm-9">{{ exam.date|date:"Y-m-d" }}</dd>
+    <dt class="col-sm-3">Başlangıç</dt><dd class="col-sm-9">{{ exam.start|date:"Y-m-d H:i" }}</dd>
+    <dt class="col-sm-3">Bitiş</dt><dd class="col-sm-9">{{ exam.finish|date:"Y-m-d H:i" }}</dd>
+    <dt class="col-sm-3">Soru</dt><dd class="col-sm-9">{{ exam.qtotal|default:"—" }}</dd>
+    <dt class="col-sm-3">Program</dt><dd class="col-sm-9">{{ exam.program }}</dd>
+    <dt class="col-sm-3">Kurul/Staj</dt><dd class="col-sm-9">{{ exam.committee }}</dd>
+    <dt class="col-sm-3">Ceza</dt><dd class="col-sm-9">{{ exam.apply_penalty|yesno:"Evet,Hayır" }}</dd>
+    <dt class="col-sm-3">Kilitli</dt><dd class="col-sm-9">{{ exam.locked|yesno:"Evet,Hayır" }}</dd>
+  </dl>
+  <a class="btn btn-secondary" href="{% url 'qbank:examsetup_list' %}">Listeye Dön</a>
+  {% if request.user.is_superuser %}
+    <a class="btn btn-primary" href="{% url 'qbank:examsetup_update' exam.pk %}">Düzenle</a>
+  {% endif %}
+</div>
+{% endblock %}
