@@ -81,6 +81,9 @@ Arif Onan
 Akdeniz University
 Contact via GitHub
 
+Project Team
+Medical Advisor: Ezgi Özgün
+
 Acknowledgments
 Django & Python open-source community
 Bootstrap and DataTables teams
